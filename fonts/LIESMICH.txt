@@ -1,0 +1,6 @@
+Optional: Original-Schrift "Barlow Condensed"
+1. Lade die Schnitte Medium, SemiBold, Bold und ExtraBold als .woff2 herunter (Google Fonts / fontsource).
+2. Lege sie hier ab, z. B. barlow-condensed-700.woff2.
+3. Ergänze in styles.css bei den @font-face-Zeilen:  , url(fonts/barlow-condensed-700.woff2) format('woff2')
+4. In sw.js VERSION erhöhen und die Dateien in FILES aufnehmen.
+Ohne diese Schritte nutzt die App eine ähnliche Schmalschrift deines Geräts.

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>MirraFit</title>
+<meta name="description" content="MirraFit – dein Trainings-Tracker: Plan, Sätze, Pausen-Timer, Bestwerte und Auswertung.">
+<meta name="theme-color" content="#01021D">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MirraFit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="toast" aria-live="polite"></div>
+<input type="file" id="file" accept=".json,application/json,text/plain" hidden>
+<noscript><p style="padding:24px;color:#EEF3F9">MirraFit braucht JavaScript.</p></noscript>
+<script src="logic.js"></script>
+<script src="core.js"></script>
+<script src="views.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
