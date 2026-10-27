@@ -1,12 +1,6 @@
 # MirraFit (PWA)
 
-Web-App-Version der Android-App – gleiche Funktionen, gleiches Backup-Format.
-
-## Starten / Veröffentlichen
-Die App braucht **HTTPS** (außer `localhost`), sonst gibt es keinen Service Worker und keine Installation.
-- Zum Testen: `python3 -m http.server 8080` in diesem Ordner, dann `http://localhost:8080`.
-- Zum echten Nutzen: Ordner auf einen HTTPS-Webspace legen (z. B. GitHub Pages, Netlify, Cloudflare Pages oder dein Heimserver mit Zertifikat).
-- Auf dem Handy öffnen → Browser-Menü → „App installieren“ (iPhone: Teilen → „Zum Home-Bildschirm“).
+Web-App-Version der Android-App – gleiche Funktionen.
 
 ## Enthalten
 Training mit Sätzen, Vorher-Werten, Auto-Ausfüllen, Bestwert-Erkennung, Pausen-Timer (Ton, Vibration, Countdown),
