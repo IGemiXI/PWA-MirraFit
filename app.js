@@ -36,7 +36,7 @@ function overlayHtml() {
   if (c) {
     h += `<div class="dialog-wrap"><div class="scrim anim" data-a="confirmNo"></div>
       <div class="dialog" role="alertdialog"><h3>${esc(c.title)}</h3><p>${esc(c.text)}</p>
-      <div class="btns"><button class="no" data-a="confirmNo">Abbrechen</button><button class="${c.danger ? 'dng' : ''}" data-a="confirmYes">${esc(c.yes)}</button></div></div></div>`;
+      <div class="btns">${c.info ? '' : '<button class="no" data-a="confirmNo">Abbrechen</button>'}<button class="${c.danger ? 'dng' : ''}" data-a="confirmYes">${esc(c.yes)}</button></div></div></div>`;
   }
   return h;
 }
@@ -567,7 +567,7 @@ document.addEventListener('pointerdown', (e) => {
     drag = { row, list, name: list.dataset.list, last: e.clientY, offset: 0, rowH: row.offsetHeight || 64 };
     row.classList.add('drag');
     try { grip.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
-    if (D().settings.vibrate) Feedback.buzz(12);
+    buzz('drag');
     return;
   }
   const hd = e.target.closest('.sheet .handle');
@@ -592,7 +592,7 @@ document.addEventListener('pointermove', (e) => {
       drag.list.insertBefore(drag.row, to > from ? rows[to].nextSibling : rows[to]);
       refreshRows(drag.list);
       drag.offset -= (to - from) * drag.rowH;
-      if (D().settings.vibrate) Feedback.buzz(6);
+      buzz('drag');
     }
     drag.row.style.transform = `translateY(${drag.offset}px)`;
   } else if (sheetDrag) {
@@ -655,7 +655,7 @@ function onTimerEnd(t) {
   const late = S.now - t.end;
   const st = D().settings;
   if (late < 5000) {
-    if (st.vibrate) Feedback.buzz([400, 150, 400]);
+    if (st.vibrate) Feedback.buzz(HAPTIC.restEnd);
     if (st.sound) Feedback.beep();
   }
   if (document.hidden && late < 120000 && st.notifyEnd) Feedback.notify('Pause vorbei', 'Nächster Satz!');
@@ -675,7 +675,7 @@ function tickLoop() {
     const remaining = Math.floor((t.end - S.now + 999) / 1000);
     if (remaining >= 1 && remaining <= 3 && remaining !== lastTick) {
       lastTick = remaining;
-      if (D().settings.tickBuzz) buzz(18);
+      if (D().settings.tickBuzz) buzz('tick');
     }
     if (S.now >= t.end) onTimerEnd(t);
   }

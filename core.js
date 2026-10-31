@@ -144,11 +144,44 @@ const Feedback = {
       if (this.actx && this.actx.state === 'suspended') this.actx.resume();
     } catch (e) { /* egal */ }
   },
-  /** Muster wie in der Android-App: vibrieren, Pause, vibrieren … (ms). false = nicht unterstützt. */
+  /** Letztes Ergebnis für die Diagnose: 'ok' | 'blocked' | 'none'. */
+  last: null,
+  ios: /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+  /**
+   * Vibrieren: Muster in ms (vibrieren, Pause, vibrieren …).
+   * Sehr kurze Impulse spüren viele Handys nicht – deshalb mindestens 35 ms.
+   * iPhone: kein Vibrations-API; ab iOS 18 gibt es beim Antippen ein kurzes Tipp-Feedback (Switch-Trick).
+   */
   buzz(pattern) {
+    const p = (Array.isArray(pattern) ? pattern : [pattern]).map((v, i) => (i % 2 === 0 ? Math.max(35, v) : v));
     try {
-      if (typeof navigator.vibrate !== 'function') return false;
-      return navigator.vibrate(pattern);
+      if (typeof navigator.vibrate === 'function') {
+        navigator.vibrate(0); // laufende Vibration abbrechen, sonst verschlucken manche Geräte die neue
+        const ok = navigator.vibrate(p);
+        this.last = ok ? 'ok' : 'blocked';
+        return ok;
+      }
+    } catch (e) { this.last = 'blocked'; return false; }
+    this.last = 'none';
+    return this.iosTap();
+  },
+  iosTap() {
+    if (!this.ios) return false;
+    try {
+      if (!this.sw) {
+        const l = document.createElement('label');
+        l.setAttribute('aria-hidden', 'true');
+        l.style.cssText = 'position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none';
+        const i = document.createElement('input');
+        i.type = 'checkbox';
+        i.setAttribute('switch', '');
+        i.tabIndex = -1;
+        l.appendChild(i);
+        document.body.appendChild(l);
+        this.sw = l;
+      }
+      this.sw.click();
+      return true;
     } catch (e) { return false; }
   },
   /** Drei kurze Pieptöne, der letzte höher. */
@@ -185,7 +218,12 @@ const Feedback = {
     } catch (e) { /* egal */ }
   },
 };
-function buzz(...p) { if (S.data.settings.vibrate) Feedback.buzz(p); }
+/** Vibrationsmuster der App (ms). */
+const HAPTIC = {
+  tap: [45], set: [80], exDone: [80, 70, 80], pr: [110, 70, 110, 70, 220], start: [70], finish: [90, 60, 90, 60, 260],
+  tick: [50], restEnd: [500, 180, 500, 180, 700], drag: [35],
+};
+function buzz(kind) { if (S.data.settings.vibrate) Feedback.buzz(HAPTIC[kind] || kind); }
 
 /* ---------- Toast ---------- */
 let toastSeq = 0;
@@ -308,7 +346,7 @@ function startSession(planId) {
   S.expanded = {};
   S.setMenu = null;
   S.lastCurrent = 0;
-  buzz(30);
+  buzz('start');
   showToast(`${plan.name} – los geht's!`);
   commit();
   return true;
@@ -343,7 +381,7 @@ function finishSession() {
   d.timer = null;
   if (d.plans.length > 1 && s.planId && planById(s.planId)) d.planId = L.nextPlanId(d.plans, s.planId);
   S.summary = entry;
-  buzz(50, 50, 50, 50, 120);
+  buzz('finish');
   commit();
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* egal */ }
 }
@@ -374,7 +412,7 @@ function stepField(ei, si, isKg, delta) {
   const cur = isKg ? (set.kg || sug[0]) : (set.reps || sug[1]);
   const next = Math.max(0, Math.round((L.num(cur) + delta) * 100) / 100);
   if (isKg) set.kg = L.plainNum(next); else set.reps = L.plainNum(next);
-  buzz(8);
+  buzz('tap');
   commit();
 }
 
@@ -397,7 +435,7 @@ function addDrop(ei, si) {
   if (set.drops.length >= 4) { showToast('Maximal 4 Drops pro Satz'); return; }
   set.drops.push({ kg: '', reps: '' });
   S.setMenu = null;
-  buzz(10);
+  buzz('tap');
   commit();
 }
 
@@ -449,9 +487,9 @@ function toggleSet(ei, si) {
   const nowComplete = ex.sets.every((x) => x.done);
   if (pr) {
     showToast(`Neuer Bestwert: ${ex.name}`, { gold: true });
-    buzz(30, 60, 30);
-  } else if (nowComplete) buzz(40, 60, 40);
-  else buzz(40);
+    buzz('pr');
+  } else if (nowComplete) buzz('exDone');
+  else buzz('set');
   S.anim.pop = `${ei}-${si}`;
   if (d.settings.autoTimer) startTimer(ex.rest || d.settings.rest, false);
   commit();
@@ -767,8 +805,25 @@ function wipeAll() {
 }
 
 function testFeedback() {
-  const ok = Feedback.buzz([300, 150, 300]);
   Feedback.beep();
-  showToast(ok ? 'Vibration gesendet – spürst du nichts, prüfe die Handy-Einstellungen'
-    : '⚠️ Dieses Gerät/dieser Browser meldet keine Vibration (iPhone: nicht möglich)');
+  const ok = Feedback.buzz([300, 150, 300, 150, 500]);
+  const st = D().settings;
+  let title, text;
+  if (Feedback.last === 'none' && Feedback.ios) {
+    title = 'iPhone';
+    text = ok
+      ? 'Apple erlaubt Web-Apps keine echte Vibration. Ab iOS 18 gibt es beim Antippen (Satz abhaken usw.) ein kurzes Tipp-Feedback – am Pausenende kommt nur der Ton. Ton gehört? Dann passt alles.'
+      : 'Apple erlaubt Web-Apps keine Vibration. Am Pausenende kommt nur der Ton.';
+  } else if (Feedback.last === 'none') {
+    title = 'Keine Vibration möglich';
+    text = 'Dieser Browser unterstützt keine Vibration. Öffne MirraFit in Google Chrome.';
+  } else if (!ok) {
+    title = 'Vom Browser blockiert';
+    text = 'Chrome hat die Vibration abgelehnt. Tippe einmal irgendwo in die App und teste erneut. Wenn das nicht hilft: App in Chrome öffnen (nicht im WhatsApp- oder Instagram-Browser).';
+  } else {
+    title = 'Vibration gesendet';
+    text = 'Die App hat gerade 3× vibriert. Gespürt? Dann passt alles.\n\nNichts gespürt? Dann blockiert dein Handy die Vibration:\n• Handy nicht auf lautlos und „Bitte nicht stören“ aus\n• Einstellungen → Töne & Vibration → Vibration/Haptik: „Berührungs-Feedback“ bzw. „Systemvibration“ einschalten und die Stärke nicht auf 0\n• Energiesparmodus aus (er schaltet bei manchen Handys die Vibration ab)';
+  }
+  if (!st.vibrate && Feedback.last !== 'none') text = '⚠️ In MirraFit ist „Vibration“ ausgeschaltet – schalte sie oben ein.\n\n' + text;
+  ask({ title, text, yes: 'OK', info: true, onYes: () => {} });
 }

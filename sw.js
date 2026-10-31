@@ -1,6 +1,6 @@
 /* MirraFit Service Worker – App läuft komplett offline.
    Beim Ändern von Dateien VERSION erhöhen, dann holt sich die App die neuen Dateien. */
-const VERSION = 'mirrafit-v3.2.0';
+const VERSION = 'mirrafit-v3.2.1';
 const FILES = [
   './', 'index.html', 'styles.css', 'logic.js', 'core.js', 'views.js', 'app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon.png', 'icons/logo.png'

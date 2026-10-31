@@ -496,3 +496,5 @@ body.kb #bottom { display: none; }
 input[type="date"].tf { color-scheme: dark; }
 .edit-row.drop { margin-left: 0; }
 .edit-row.drop .sn { color: var(--magenta); display: grid; place-items: center; }
+
+.dialog p { white-space: pre-line; }
